@@ -307,7 +307,6 @@
             inputTampilan.readOnly = false;
             btnSimpan.className = "btn btn-success w-100 fw-bold btn-touch shadow";
             
-            // Kategori utama Setoran Masuk
             const opsiMasuk = [
                 "Setoran Full",
                 "Setoran Kurang",
@@ -338,14 +337,31 @@
         validasiAturanCatatan();
     }
 
-    // LOGIKA DINAMIS SUNTIKAN ATURAN BARU
+    // UPDATE: PERBAIKAN LOGIKA DINAMIS OTOMATISASI NOMINAL & CATATAN
     function validasiAturanCatatan() {
         const jenisTerpilih = document.querySelector('input[name="jenis"]:checked').value;
         const kategoriUtama = selectKeterangan.value;
         const boxNominal = document.getElementById('boxNominal');
 
         if (jenisTerpilih === 'masuk') {
-            if (kategoriUtama === 'Angkot Tidak Jalan') {
+            if (kategoriUtama === 'Setoran Full') {
+                // BARU: Otomatis isi 130.000, ubah tampilan berformat, kunci input
+                inputAsli.value = '130000';
+                inputTampilan.value = parseInt('130000').toLocaleString('id-ID');
+                inputTampilan.readOnly = true;
+                
+                boxNominal.style.backgroundColor = '#e8f8f5';
+                boxNominal.style.border = '2px solid #2ecc71';
+                document.getElementById('labelNominal').className = "form-label fw-bold small text-success";
+                inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-success";
+
+                // Sembunyikan catatan tambahan karena setoran sudah full
+                boxKeteranganManual.classList.add('d-none');
+                inputManual.placeholder = "";
+                inputManual.required = false;
+                inputManual.value = "";
+
+            } else if (kategoriUtama === 'Angkot Tidak Jalan') {
                 // Otomatis isi nominal 0 dan kunci input
                 inputTampilan.value = '0';
                 inputAsli.value = '0';
@@ -362,8 +378,11 @@
                 inputManual.required = true;
 
             } else if (kategoriUtama === 'Setoran Kurang') {
+                // Buka input nominal agar operator bisa mengetik nominal setoran yang kurang
                 inputTampilan.readOnly = false;
-                if(inputAsli.value === '0') { inputTampilan.value = ''; inputAsli.value = ''; }
+                // Bersihkan angka jika sebelumnya bekas terisi otomatis oleh kategori lain
+                if(inputAsli.value === '0' || inputAsli.value === '130000') { inputTampilan.value = ''; inputAsli.value = ''; }
+                
                 boxNominal.style.backgroundColor = '#e8f8f5';
                 boxNominal.style.border = '2px solid #2ecc71';
                 document.getElementById('labelNominal').className = "form-label fw-bold small text-success";
@@ -374,23 +393,15 @@
                 labelKeteranganManual.innerHTML = 'Alasan Setoran Kurang <span class="text-danger fw-bold">*Wajib Diisi</span>';
                 inputManual.placeholder = "Tulis alasan di sini (misal: sepi, ban bocor)";
                 inputManual.required = true;
-            } else {
-                // Setoran Full (Sembunyikan Catatan Tambahan)
-                inputTampilan.readOnly = false;
-                if(inputAsli.value === '0') { inputTampilan.value = ''; inputAsli.value = ''; }
-                boxNominal.style.backgroundColor = '#e8f8f5';
-                boxNominal.style.border = '2px solid #2ecc71';
-                document.getElementById('labelNominal').className = "form-label fw-bold small text-success";
-                inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-success";
-
-                boxKeteranganManual.classList.add('d-none');
-                inputManual.placeholder = "";
-                inputManual.required = false;
-                inputManual.value = "";
             }
         } else {
             // Uang Keluar (Selalu memunculkan catatan tambahan untuk detail belanja)
             inputTampilan.readOnly = false;
+            if(inputAsli.value === '0' || inputAsli.value === '130000') { inputTampilan.value = ''; inputAsli.value = ''; }
+            
+            boxNominal.style.backgroundColor = '#fdedec';
+            boxNominal.style.border = '2px solid #e74c3c';
+            
             boxKeteranganManual.classList.remove('d-none');
             labelKeteranganManual.innerHTML = 'Detail Pengeluaran <span class="text-danger fw-bold">*Wajib Diisi</span>';
             inputManual.placeholder = "Misal: Nama toko sparepart, ganti oli merk apa, dll";
