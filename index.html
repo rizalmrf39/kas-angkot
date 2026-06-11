@@ -58,6 +58,7 @@
         }
         .log-item.masuk { border-left-color: #2ecc71; background-color: #f4fbf7; }
         .log-item.keluar { border-left-color: #e74c3c; background-color: #fdf5f5; }
+        .log-item.tidak-jalan { border-left-color: #f39c12; background-color: #fffaf0; }
         
         .btn:active, .log-item:active { opacity: 0.85; }
 
@@ -212,7 +213,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // --- DATA CONFIG FIREBASE ANDA (TETAP AMAN) ---
+    // --- DATA CONFIG FIREBASE ANDA ---
     const firebaseConfig = {
         apiKey: "AIzaSyCIR_F_sShdVBzMFiDPYq9ocLOjrZx2QYo",
         authDomain: "kas-angkot-online.firebaseapp.com",
@@ -301,12 +302,14 @@
             labelNominal.className = "form-label fw-bold small text-success";
             labelNominal.innerText = "🟢 NOMINAL SETORAN MASUK (Rp)";
             inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-success";
+            inputTampilan.readOnly = false;
             btnSimpan.className = "btn btn-success w-100 fw-bold btn-touch shadow";
             
-            // Hanya 2 Kategori Utama sesuai permintaan
+            // Ditambahkan kategori "Angkot Tidak Jalan"
             const opsiMasuk = [
                 "Setoran Full",
-                "Setoran Kurang"
+                "Setoran Kurang",
+                "Angkot Tidak Jalan"
             ];
             opsiMasuk.forEach(opsi => {
                 selectKeterangan.innerHTML += `<option value="${opsi}">${opsi}</option>`;
@@ -318,6 +321,7 @@
             labelNominal.className = "form-label fw-bold small text-danger";
             labelNominal.innerText = "🔴 NOMINAL UANG KELUAR (Rp)";
             inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-danger";
+            inputTampilan.readOnly = false;
             btnSimpan.className = "btn btn-danger w-100 fw-bold btn-touch shadow";
             
             const opsiKeluar = [
@@ -332,25 +336,55 @@
         validasiAturanCatatan();
     }
 
-    // LOGIKA ATURAN WAJIB / OPSIONAL CATATAN
+    // LOGIKA OTOMATISASI DAN VALIDASI WAJIB ISI
     function validasiAturanCatatan() {
         const jenisTerpilih = document.querySelector('input[name="jenis"]:checked').value;
         const kategoriUtama = selectKeterangan.value;
+        const boxNominal = document.getElementById('boxNominal');
 
         if (jenisTerpilih === 'masuk') {
-            if (kategoriUtama === 'Setoran Kurang') {
-                // WAJIB ISI ALASAN
+            if (kategoriUtama === 'Angkot Tidak Jalan') {
+                // Otomatis isi 0, kunci input, dan beri warna netral/kuning peringatan
+                inputTampilan.value = '0';
+                inputAsli.value = '0';
+                inputTampilan.readOnly = true;
+                boxNominal.style.backgroundColor = '#fef9e7';
+                boxNominal.style.border = '2px solid #f39c12';
+                document.getElementById('labelNominal').className = "form-label fw-bold small text-warning";
+                inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-warning";
+
+                labelKeteranganManual.innerHTML = 'Alasan Angkot Tidak Jalan <span class="text-danger fw-bold">*Wajib Diisi</span>';
+                inputManual.placeholder = "Tulis alasan di sini (misal: supir sakit, masuk bengkel)";
+                inputManual.required = true;
+
+            } else if (kategoriUtama === 'Setoran Kurang') {
+                // Buka kembali jika sebelumnya kekunci, jalankan validasi setoran kurang
+                inputTampilan.readOnly = false;
+                if(inputAsli.value === '0') { inputTampilan.value = ''; inputAsli.value = ''; }
+                boxNominal.style.backgroundColor = '#e8f8f5';
+                boxNominal.style.border = '2px solid #2ecc71';
+                document.getElementById('labelNominal').className = "form-label fw-bold small text-success";
+                inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-success";
+
                 labelKeteranganManual.innerHTML = 'Alasan Setoran Kurang <span class="text-danger fw-bold">*Wajib Diisi</span>';
-                inputManual.placeholder = "Tulis alasan di sini (misal: sepi penumpang, ban bocor)";
+                inputManual.placeholder = "Tulis alasan di sini (misal: sepi, ban bocor)";
                 inputManual.required = true;
             } else {
-                // SETORAN FULL -> BEBAS/KOSONG
+                // Setoran Full
+                inputTampilan.readOnly = false;
+                if(inputAsli.value === '0') { inputTampilan.value = ''; inputAsli.value = ''; }
+                boxNominal.style.backgroundColor = '#e8f8f5';
+                boxNominal.style.border = '2px solid #2ecc71';
+                document.getElementById('labelNominal').className = "form-label fw-bold small text-success";
+                inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-success";
+
                 labelKeteranganManual.innerHTML = 'Catatan Tambahan (Opsional)';
                 inputManual.placeholder = "Boleh dikosongkan jika tidak ada catatan";
                 inputManual.required = false;
             }
         } else {
-            // JIKA UANG KELUAR -> SELALU WAJIB ISI DETAIL BIAR JELAS
+            // Uang Keluar
+            inputTampilan.readOnly = false;
             labelKeteranganManual.innerHTML = 'Detail Pengeluaran <span class="text-danger fw-bold">*Wajib Diisi</span>';
             inputManual.placeholder = "Misal: Nama toko sparepart, ganti oli merk apa, dll";
             inputManual.required = true;
@@ -362,6 +396,7 @@
     });
 
     inputTampilan.addEventListener('input', function(e) {
+        if(this.readOnly) return;
         let angka = this.value.replace(/\D/g, '');
         if (angka) {
             inputAsli.value = angka;
@@ -431,8 +466,14 @@
 
                 const opsiTanggal = { month: 'short', day: 'numeric' };
                 const tglIndo = new Date(item.tanggal).toLocaleDateString('id-ID', opsiTanggal);
-                const kelasJenis = item.jenis === 'masuk' ? 'masuk' : 'keluar';
-                const warnaNominal = item.jenis === 'masuk' ? 'text-success' : 'text-danger';
+                
+                // Set kelas visual jika angkot tidak jalan
+                let kelasJenis = item.jenis === 'masuk' ? 'masuk' : 'keluar';
+                if (item.keterangan.includes("Angkot Tidak Jalan")) {
+                    kelasJenis = 'tidak-jalan';
+                }
+                
+                const warnaNominal = item.jenis === 'masuk' ? (nominalBersih === 0 ? 'text-warning' : 'text-success') : 'text-danger';
                 const tanda = item.jenis === 'masuk' ? '💰 +' : '💸 -';
 
                 const tombolHapusHtml = isAdmin 
@@ -496,13 +537,13 @@
             keteranganFinal = `${keteranganUtama} (${catatanTambahan})`;
         }
 
-        if(!nominal || !angkot) return;
+        if(nominal === '' || !angkot) return;
 
         if (jenis === 'masuk') {
             const sudahAdaSetoran = dataTransaksiGlobal.some(item => item.tanggal === tanggal && item.angkot === angkot && item.jenis === 'masuk');
             
             if (sudahAdaSetoran) {
-                alert(`⚠️ GAGAL INPUT!\n${angkot} sudah melakukan penginputan SETORAN pada tanggal ${tanggal}.`);
+                alert(`⚠️ GAGAL INPUT!\n${angkot} sudah memiliki catatan status (Setoran/Libur) pada tanggal ${tanggal}.`);
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                 return;
             }
