@@ -132,17 +132,17 @@
                         <label class="btn btn-outline-dark fw-bold py-2" for="angkot_03" style="border-radius: 0 10px 10px 0;">🚌 Pahlevi 3</label>
                     </div>
                 </div>
-                
-                <div id="boxNominal" class="p-3 rounded-3 mb-3" style="transition: all 0.3s ease;">
-                    <label for="nominalTampilan" id="labelNominal" class="form-label fw-bold small">Nominal Uang (Rp)</label>
-                    <input type="text" inputmode="numeric" class="form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0" id="nominalTampilan" placeholder="0" required style="box-shadow: none;">
-                    <input type="hidden" id="nominalAsli">
-                </div>
 
                 <div class="mb-3">
                     <label for="keteranganPilihan" class="form-label fw-semibold text-muted small">Keterangan / Kategori Utama</label>
                     <select class="form-select fw-bold py-2" id="keteranganPilihan" onchange="validasiAturanCatatan()" required>
                     </select>
+                </div>
+                
+                <div id="boxNominal" class="p-3 rounded-3 mb-3" style="transition: all 0.3s ease;">
+                    <label for="nominalTampilan" id="labelNominal" class="form-label fw-bold small">Nominal Uang (Rp)</label>
+                    <input type="text" inputmode="numeric" class="form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0" id="nominalTampilan" placeholder="0" required style="box-shadow: none;">
+                    <input type="hidden" id="nominalAsli">
                 </div>
 
                 <div class="mb-4 d-none" id="boxKeteranganManual">
@@ -337,7 +337,6 @@
         validasiAturanCatatan();
     }
 
-    // UPDATE: PERBAIKAN LOGIKA DINAMIS OTOMATISASI NOMINAL & CATATAN
     function validasiAturanCatatan() {
         const jenisTerpilih = document.querySelector('input[name="jenis"]:checked').value;
         const kategoriUtama = selectKeterangan.value;
@@ -345,7 +344,6 @@
 
         if (jenisTerpilih === 'masuk') {
             if (kategoriUtama === 'Setoran Full') {
-                // BARU: Otomatis isi 130.000, ubah tampilan berformat, kunci input
                 inputAsli.value = '130000';
                 inputTampilan.value = parseInt('130000').toLocaleString('id-ID');
                 inputTampilan.readOnly = true;
@@ -355,14 +353,12 @@
                 document.getElementById('labelNominal').className = "form-label fw-bold small text-success";
                 inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-success";
 
-                // Sembunyikan catatan tambahan karena setoran sudah full
                 boxKeteranganManual.classList.add('d-none');
                 inputManual.placeholder = "";
                 inputManual.required = false;
                 inputManual.value = "";
 
             } else if (kategoriUtama === 'Angkot Tidak Jalan') {
-                // Otomatis isi nominal 0 dan kunci input
                 inputTampilan.value = '0';
                 inputAsli.value = '0';
                 inputTampilan.readOnly = true;
@@ -371,16 +367,13 @@
                 document.getElementById('labelNominal').className = "form-label fw-bold small text-warning";
                 inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-warning";
 
-                // Memunculkan kotak Catatan Tambahan (Wajib Isi)
                 boxKeteranganManual.classList.remove('d-none');
                 labelKeteranganManual.innerHTML = 'Alasan Angkot Tidak Jalan <span class="text-danger fw-bold">*Wajib Diisi</span>';
                 inputManual.placeholder = "Tulis alasan di sini (misal: supir sakit, masuk bengkel)";
                 inputManual.required = true;
 
             } else if (kategoriUtama === 'Setoran Kurang') {
-                // Buka input nominal agar operator bisa mengetik nominal setoran yang kurang
                 inputTampilan.readOnly = false;
-                // Bersihkan angka jika sebelumnya bekas terisi otomatis oleh kategori lain
                 if(inputAsli.value === '0' || inputAsli.value === '130000') { inputTampilan.value = ''; inputAsli.value = ''; }
                 
                 boxNominal.style.backgroundColor = '#e8f8f5';
@@ -388,14 +381,12 @@
                 document.getElementById('labelNominal').className = "form-label fw-bold small text-success";
                 inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-success";
 
-                // Memunculkan kotak Catatan Tambahan (Wajib Isi)
                 boxKeteranganManual.classList.remove('d-none');
                 labelKeteranganManual.innerHTML = 'Alasan Setoran Kurang <span class="text-danger fw-bold">*Wajib Diisi</span>';
                 inputManual.placeholder = "Tulis alasan di sini (misal: sepi, ban bocor)";
                 inputManual.required = true;
             }
         } else {
-            // Uang Keluar (Selalu memunculkan catatan tambahan untuk detail belanja)
             inputTampilan.readOnly = false;
             if(inputAsli.value === '0' || inputAsli.value === '130000') { inputTampilan.value = ''; inputAsli.value = ''; }
             
