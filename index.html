@@ -138,14 +138,14 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="keteranganPilihan" class="form-label fw-semibold text-muted small">Keterangan / Kategori</label>
+                    <label for="keteranganPilihan" class="form-label fw-semibold text-muted small">Keterangan / Kategori Utama</label>
                     <select class="form-select fw-bold py-2" id="keteranganPilihan" onchange="cekKeteranganLainnya()" required>
                         </select>
                 </div>
 
-                <div class="mb-4 d-none" id="boxKeteranganManual">
-                    <label for="keteranganManual" class="form-label fw-semibold text-muted small">Tulis Keterangan Pengeluaran</label>
-                    <input type="text" class="form-control" id="keteranganManual" placeholder="Misal: Beli Ban Baru / Bayar Pajak">
+                <div class="mb-4" id="boxKeteranganManual">
+                    <label for="keteranganManual" class="form-label fw-semibold text-muted small">Catatan Tambahan Bebas (Opsional)</label>
+                    <input type="text" class="form-control" id="keteranganManual" placeholder="Misal: nama supir, detail sparepart, dll (boleh kosong)">
                 </div>
 
                 <button type="submit" id="btnSimpan" class="btn w-100 fw-bold btn-touch shadow">💾 Simpan Transaksi</button>
@@ -212,7 +212,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // --- TEMPELKAN DATA CONFIG FIREBASE ANDA DI SINI ---
+    // --- DATA CONFIG FIREBASE ANDA (TETAP AMAN) ---
     const firebaseConfig = {
         apiKey: "AIzaSyCIR_F_sShdVBzMFiDPYq9ocLOjrZx2QYo",
         authDomain: "kas-angkot-online.firebaseapp.com",
@@ -284,7 +284,6 @@
     const inputTampilan = document.getElementById('nominalTampilan');
     const inputAsli = document.getElementById('nominalAsli');
     const selectKeterangan = document.getElementById('keteranganPilihan');
-    const boxManual = document.getElementById('boxKeteranganManual');
     const inputManual = document.getElementById('keteranganManual');
 
     function sesuaikanWarnaDanContoh() {
@@ -293,7 +292,6 @@
         const labelNominal = document.getElementById('labelNominal');
         const btnSimpan = document.getElementById('btnSimpan');
 
-        // Reset dropdown pilihan berdasarkan tipe transaksi
         selectKeterangan.innerHTML = '';
 
         if (jenisTerpilih === 'masuk') {
@@ -304,7 +302,6 @@
             inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-success";
             btnSimpan.className = "btn btn-success w-100 fw-bold btn-touch shadow";
             
-            // Opsi Otomatis Setoran Masuk
             const opsiMasuk = [
                 "Setoran Full",
                 "Setoran Setengah hari",
@@ -314,8 +311,7 @@
             opsiMasuk.forEach(opsi => {
                 selectKeterangan.innerHTML += `<option value="${opsi}">${opsi}</option>`;
             });
-            boxManual.classList.add('d-none');
-            inputManual.required = false;
+            inputManual.placeholder = "Misal: Nama supir, atau catatan tambahan (boleh kosong)";
 
         } else {
             boxNominal.style.backgroundColor = '#fdedec';
@@ -325,26 +321,15 @@
             inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-danger";
             btnSimpan.className = "btn btn-danger w-100 fw-bold btn-touch shadow";
             
-            // Opsi Otomatis Uang Keluar
             const opsiKeluar = [
                 "Ganti Oli (Wajib Bulanan)",
                 "Servis Rutin / Perbaikan",
-                "Lain-lain (Tulis Manual)"
+                "Lain-lain / Keperluan Bebas"
             ];
             opsiKeluar.forEach(opsi => {
                 selectKeterangan.innerHTML += `<option value="${opsi}">${opsi}</option>`;
             });
-            cekKeteranganLainnya();
-        }
-    }
-
-    function cekKeteranganLainnya() {
-        if (selectKeterangan.value === "Lain-lain (Tulis Manual)") {
-            boxManual.classList.remove('d-none');
-            inputManual.required = true;
-        } else {
-            boxManual.classList.add('d-none');
-            inputManual.required = false;
+            inputManual.placeholder = "Misal: nama toko sparepart, detail kerusakan, dll";
         }
     }
 
@@ -479,13 +464,16 @@
         const nominal = inputAsli.value; 
         const angkot = document.querySelector('input[name="angkot"]:checked').value;
         
-        // Penentuan teks keterangan yang disimpan ke database
-        let keterangan = selectKeterangan.value;
-        if (jenis === 'keluar' && keterangan === "Lain-lain (Tulis Manual)") {
-            keterangan = inputManual.value;
+        // PENGGABUNGAN OTOMATIS: Dropdown Utama + Catatan Tambahan Bebas
+        let keteranganUtama = selectKeterangan.value;
+        let catatanTambahan = inputManual.value.trim();
+        
+        let keteranganFinal = keteranganUtama;
+        if (catatanTambahan !== "") {
+            keteranganFinal = `${keteranganUtama} (${catatanTambahan})`;
         }
 
-        if(!nominal || !angkot || !keterangan) return;
+        if(!nominal || !angkot) return;
 
         if (jenis === 'masuk') {
             const sudahAdaSetoran = dataTransaksiGlobal.some(item => item.tanggal === tanggal && item.angkot === angkot && item.jenis === 'masuk');
@@ -502,7 +490,7 @@
             angkot: angkot,
             jenis: jenis,
             nominal: nominal,
-            keterangan: keterangan
+            keterangan: keteranganFinal
         }).then(() => {
             if (navigator.vibrate) navigator.vibrate(40);
             
@@ -533,7 +521,6 @@
         }
     }
 
-    // Inisialisasi awal pilihan dropdown keterangan
     sesuaikanWarnaDanContoh();
 </script>
 </body>
