@@ -137,9 +137,15 @@
                     <input type="hidden" id="nominalAsli">
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-semibold text-muted small">Keterangan / Catatan Tambahan</label>
-                    <input type="text" class="form-control" id="keterangan" placeholder="" required>
+                <div class="mb-3">
+                    <label for="keteranganPilihan" class="form-label fw-semibold text-muted small">Keterangan / Kategori</label>
+                    <select class="form-select fw-bold py-2" id="keteranganPilihan" onchange="cekKeteranganLainnya()" required>
+                        </select>
+                </div>
+
+                <div class="mb-4 d-none" id="boxKeteranganManual">
+                    <label for="keteranganManual" class="form-label fw-semibold text-muted small">Tulis Keterangan Pengeluaran</label>
+                    <input type="text" class="form-control" id="keteranganManual" placeholder="Misal: Beli Ban Baru / Bayar Pajak">
                 </div>
 
                 <button type="submit" id="btnSimpan" class="btn w-100 fw-bold btn-touch shadow">💾 Simpan Transaksi</button>
@@ -206,16 +212,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // --- MASUKKAN DATA FIREBASE ANDA DI SINI ---
-const firebaseConfig = {
-    apiKey: "AIzaSyCIR_F_sShdVBzMFiDPYq9ocLOjrZx2QYo",
-    authDomain: "kas-angkot-online.firebaseapp.com",
-    databaseURL: "https://kas-angkot-online-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "kas-angkot-online",
-    storageBucket: "kas-angkot-online.firebasestorage.app",
-    messagingSenderId: "46164187145",
-    appId: "1:46164187145:web:4c3d0693e7f19427c040d8"
-};
+    // --- TEMPELKAN DATA CONFIG FIREBASE ANDA DI SINI ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCIR_F_sShdVBzMFiDPYq9ocLOjrZx2QYo",
+        authDomain: "kas-angkot-online.firebaseapp.com",
+        databaseURL: "https://kas-angkot-online-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "kas-angkot-online",
+        storageBucket: "kas-angkot-online.firebasestorage.app",
+        messagingSenderId: "46164187145",
+        appId: "1:46164187145:web:4c3d0693e7f19427c040d8"
+    };
     
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database().ref('transaksi_angkot');
@@ -277,13 +283,18 @@ const firebaseConfig = {
 
     const inputTampilan = document.getElementById('nominalTampilan');
     const inputAsli = document.getElementById('nominalAsli');
-    const kolomKeterangan = document.getElementById('keterangan');
+    const selectKeterangan = document.getElementById('keteranganPilihan');
+    const boxManual = document.getElementById('boxKeteranganManual');
+    const inputManual = document.getElementById('keteranganManual');
 
     function sesuaikanWarnaDanContoh() {
         const jenisTerpilih = document.querySelector('input[name="jenis"]:checked').value;
         const boxNominal = document.getElementById('boxNominal');
         const labelNominal = document.getElementById('labelNominal');
         const btnSimpan = document.getElementById('btnSimpan');
+
+        // Reset dropdown pilihan berdasarkan tipe transaksi
+        selectKeterangan.innerHTML = '';
 
         if (jenisTerpilih === 'masuk') {
             boxNominal.style.backgroundColor = '#e8f8f5';
@@ -292,7 +303,20 @@ const firebaseConfig = {
             labelNominal.innerText = "🟢 NOMINAL SETORAN MASUK (Rp)";
             inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-success";
             btnSimpan.className = "btn btn-success w-100 fw-bold btn-touch shadow";
-            kolomKeterangan.placeholder = "Contoh: Setoran Supir A / Shift Pagi";
+            
+            // Opsi Otomatis Setoran Masuk
+            const opsiMasuk = [
+                "Setoran Full",
+                "Setoran Setengah hari",
+                "angkot tidak jalan",
+                "Setoran di pinjam supir"
+            ];
+            opsiMasuk.forEach(opsi => {
+                selectKeterangan.innerHTML += `<option value="${opsi}">${opsi}</option>`;
+            });
+            boxManual.classList.add('d-none');
+            inputManual.required = false;
+
         } else {
             boxNominal.style.backgroundColor = '#fdedec';
             boxNominal.style.border = '2px solid #e74c3c';
@@ -300,7 +324,27 @@ const firebaseConfig = {
             labelNominal.innerText = "🔴 NOMINAL UANG KELUAR (Rp)";
             inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-danger";
             btnSimpan.className = "btn btn-danger w-100 fw-bold btn-touch shadow";
-            kolomKeterangan.placeholder = "Contoh: Ganti Oli / Servis Rutin";
+            
+            // Opsi Otomatis Uang Keluar
+            const opsiKeluar = [
+                "Ganti Oli (Wajib Bulanan)",
+                "Servis Rutin / Perbaikan",
+                "Lain-lain (Tulis Manual)"
+            ];
+            opsiKeluar.forEach(opsi => {
+                selectKeterangan.innerHTML += `<option value="${opsi}">${opsi}</option>`;
+            });
+            cekKeteranganLainnya();
+        }
+    }
+
+    function cekKeteranganLainnya() {
+        if (selectKeterangan.value === "Lain-lain (Tulis Manual)") {
+            boxManual.classList.remove('d-none');
+            inputManual.required = true;
+        } else {
+            boxManual.classList.add('d-none');
+            inputManual.required = false;
         }
     }
 
@@ -394,7 +438,7 @@ const firebaseConfig = {
                                 <small class="text-muted fw-bold">${tglIndo}</small>
                             </div>
                             <span class="fw-bold text-dark allow-select d-block" style="font-size: 14px; line-height: 1.2;">
-                                ${item.keterangan || (item.jenis === 'masuk' ? 'Setoran' : 'Pengeluaran')}
+                                ${item.keterangan}
                             </span>
                         </div>
                         <div class="text-end d-flex align-items-center gap-2">
@@ -433,10 +477,15 @@ const firebaseConfig = {
         const tanggal = document.getElementById('tanggal').value;
         const jenis = document.querySelector('input[name="jenis"]:checked').value;
         const nominal = inputAsli.value; 
-        const keterangan = kolomKeterangan.value;
         const angkot = document.querySelector('input[name="angkot"]:checked').value;
+        
+        // Penentuan teks keterangan yang disimpan ke database
+        let keterangan = selectKeterangan.value;
+        if (jenis === 'keluar' && keterangan === "Lain-lain (Tulis Manual)") {
+            keterangan = inputManual.value;
+        }
 
-        if(!nominal || !angkot) return;
+        if(!nominal || !angkot || !keterangan) return;
 
         if (jenis === 'masuk') {
             const sudahAdaSetoran = dataTransaksiGlobal.some(item => item.tanggal === tanggal && item.angkot === angkot && item.jenis === 'masuk');
@@ -459,9 +508,10 @@ const firebaseConfig = {
             
             inputTampilan.value = '';
             inputAsli.value = '';
-            kolomKeterangan.value = '';
+            inputManual.value = '';
 
             setTanggalKeHariIni();
+            sesuaikanWarnaDanContoh();
 
             const notif = document.getElementById('notifSukses');
             notif.classList.remove('d-none');
@@ -483,6 +533,7 @@ const firebaseConfig = {
         }
     }
 
+    // Inisialisasi awal pilihan dropdown keterangan
     sesuaikanWarnaDanContoh();
 </script>
 </body>
