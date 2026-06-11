@@ -139,13 +139,13 @@
 
                 <div class="mb-3">
                     <label for="keteranganPilihan" class="form-label fw-semibold text-muted small">Keterangan / Kategori Utama</label>
-                    <select class="form-select fw-bold py-2" id="keteranganPilihan" onchange="cekKeteranganLainnya()" required>
+                    <select class="form-select fw-bold py-2" id="keteranganPilihan" onchange="validasiAturanCatatan()" required>
                         </select>
                 </div>
 
                 <div class="mb-4" id="boxKeteranganManual">
-                    <label for="keteranganManual" class="form-label fw-semibold text-muted small">Catatan Tambahan Bebas (Opsional)</label>
-                    <input type="text" class="form-control" id="keteranganManual" placeholder="Misal: nama supir, detail sparepart, dll (boleh kosong)">
+                    <label for="keteranganManual" id="labelKeteranganManual" class="form-label fw-semibold text-muted small">Catatan Tambahan Bebas</label>
+                    <input type="text" class="form-control" id="keteranganManual" placeholder="">
                 </div>
 
                 <button type="submit" id="btnSimpan" class="btn w-100 fw-bold btn-touch shadow">💾 Simpan Transaksi</button>
@@ -285,6 +285,7 @@
     const inputAsli = document.getElementById('nominalAsli');
     const selectKeterangan = document.getElementById('keteranganPilihan');
     const inputManual = document.getElementById('keteranganManual');
+    const labelKeteranganManual = document.getElementById('labelKeteranganManual');
 
     function sesuaikanWarnaDanContoh() {
         const jenisTerpilih = document.querySelector('input[name="jenis"]:checked').value;
@@ -302,16 +303,14 @@
             inputTampilan.className = "form-control form-control-lg fw-bold fs-1 border-0 bg-transparent p-0 text-success";
             btnSimpan.className = "btn btn-success w-100 fw-bold btn-touch shadow";
             
+            // Hanya 2 Kategori Utama sesuai permintaan
             const opsiMasuk = [
                 "Setoran Full",
-                "Setoran Setengah hari",
-                "angkot tidak jalan",
-                "Setoran di pinjam supir"
+                "Setoran Kurang"
             ];
             opsiMasuk.forEach(opsi => {
                 selectKeterangan.innerHTML += `<option value="${opsi}">${opsi}</option>`;
             });
-            inputManual.placeholder = "Misal: Nama supir, atau catatan tambahan (boleh kosong)";
 
         } else {
             boxNominal.style.backgroundColor = '#fdedec';
@@ -329,7 +328,32 @@
             opsiKeluar.forEach(opsi => {
                 selectKeterangan.innerHTML += `<option value="${opsi}">${opsi}</option>`;
             });
-            inputManual.placeholder = "Misal: nama toko sparepart, detail kerusakan, dll";
+        }
+        validasiAturanCatatan();
+    }
+
+    // LOGIKA ATURAN WAJIB / OPSIONAL CATATAN
+    function validasiAturanCatatan() {
+        const jenisTerpilih = document.querySelector('input[name="jenis"]:checked').value;
+        const kategoriUtama = selectKeterangan.value;
+
+        if (jenisTerpilih === 'masuk') {
+            if (kategoriUtama === 'Setoran Kurang') {
+                // WAJIB ISI ALASAN
+                labelKeteranganManual.innerHTML = 'Alasan Setoran Kurang <span class="text-danger fw-bold">*Wajib Diisi</span>';
+                inputManual.placeholder = "Tulis alasan di sini (misal: sepi penumpang, ban bocor)";
+                inputManual.required = true;
+            } else {
+                // SETORAN FULL -> BEBAS/KOSONG
+                labelKeteranganManual.innerHTML = 'Catatan Tambahan (Opsional)';
+                inputManual.placeholder = "Boleh dikosongkan jika tidak ada catatan";
+                inputManual.required = false;
+            }
+        } else {
+            // JIKA UANG KELUAR -> SELALU WAJIB ISI DETAIL BIAR JELAS
+            labelKeteranganManual.innerHTML = 'Detail Pengeluaran <span class="text-danger fw-bold">*Wajib Diisi</span>';
+            inputManual.placeholder = "Misal: Nama toko sparepart, ganti oli merk apa, dll";
+            inputManual.required = true;
         }
     }
 
@@ -464,7 +488,6 @@
         const nominal = inputAsli.value; 
         const angkot = document.querySelector('input[name="angkot"]:checked').value;
         
-        // PENGGABUNGAN OTOMATIS: Dropdown Utama + Catatan Tambahan Bebas
         let keteranganUtama = selectKeterangan.value;
         let catatanTambahan = inputManual.value.trim();
         
